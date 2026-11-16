@@ -448,6 +448,14 @@ prompt_for_password(void)
 
 #define BUFSIZE 1024
 
+#ifndef WIN32
+	/*
+	 * Let Ctrl+C interrupt the prompt. Our own SIGINT handler only sets a
+	 * flag, so the prompt would keep waiting for input.
+	 */
+	pqsigfunc	oldsigint = pqsignal(SIGINT, SIG_DFL);
+#endif
+
 #if PG_VERSION_NUM < 100000
 	if (have_passwd) {
 		buf = pgut_malloc(BUFSIZE);
@@ -481,6 +489,10 @@ prompt_for_password(void)
 		passwdbuf = pgut_malloc(passwd_size);
 		memcpy(passwdbuf, buf, sizeof(char) * passwd_size);
 	}
+#endif
+
+#ifndef WIN32
+	pqsignal(SIGINT, oldsigint);
 #endif
 
 	if (buf == NULL)
